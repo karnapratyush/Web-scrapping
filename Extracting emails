@@ -1,0 +1,79 @@
+from bs4 import BeautifulSoup as bs
+import lxml
+import requests
+import re
+import time
+import csv
+from selenium import webdriver
+
+def get_emails(visited,not_visited,company,emails,driver):
+        
+    if len(visited.keys())==200:
+        return emails
+    elif len(not_visited)==0:
+        return emails
+    elif " " in not_visited[0]  or "." not in not_visited[0] or ";" in not_visited[0] or "JavaScript:Void" in not_visited[0] or "void" in not_visited[0] or "error" in not_visited[0]:
+        not_visited.pop(0)
+        return get_emails(visited,not_visited,company,emails,driver)
+  
+    try:
+        driver.get(not_visited[0])
+        source=driver.page_source
+        soup=bs(source,'html.parser')
+        soup.decode('utf-8')
+        a=soup.find_all('a')
+        
+        email_pattern=re.compile(r'[\w.%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}')
+        em=re.findall(email_pattern,soup.text)
+        for i in em:
+            if i not in emails:
+                emails.append(i)
+                print(i)
+        for links in a:
+            try:
+                if(len(links.get("href"))>2):
+                    links=str((links.get('href')))
+                    if company in links:
+                        pass
+                    elif ".com" in links or ".in" in links or ".org" in links:
+                        links=company
+                    else:
+                        links=company+links
+                    try:
+                        if visited[links]==1:
+                            pass
+                    except:
+                        if links not in not_visited:
+                            not_visited.append(links)
+                            print(links)
+            except:
+                pass
+    except:
+        pass
+
+    visited[not_visited[0]]=1
+    not_visited.pop(0)
+    
+    return get_emails(visited,not_visited,company,emails,driver)
+            
+
+worksheet=open("email.csv","a")
+csv_writer=csv.writer(worksheet)
+csv_writer.writerow(["company","email "])
+comp=open("company.txt","r")
+for company in comp:
+    not_visited=[]
+    print(company)
+    not_visited.append(company)
+    visited={}
+    actual_emails=[]
+    emails=[]
+    driver=webdriver.Chrome("C:\Program Files (x86)\chromedriver.exe")
+    x=get_emails(visited,not_visited,company,emails,driver)
+    for email in actual_emails :
+        csv_writer.writerow([company,i])
+    time.sleep(5)
+    
+        
+worksheet.close()
+driver.close()
