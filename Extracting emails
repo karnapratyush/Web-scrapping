@@ -5,7 +5,7 @@ import re
 import time
 import csv
 from selenium import webdriver
-
+#hello
 def get_emails(visited,not_visited,company,emails,driver):
         
     if len(visited.keys())==200:
